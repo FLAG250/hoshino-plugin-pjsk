@@ -4,6 +4,7 @@ import os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import re
 from io import BytesIO
+import codecs
 
 from hoshino.typing import CQEvent, MessageSegment
 from hoshino import Service, priv, config
@@ -169,8 +170,15 @@ async def pj_profileGet(bot,ev:CQEvent):
             word_font = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=32)
             draw = ImageDraw.Draw(profile_image)
             draw_icon = ImageDraw.Draw(picon)
+            
+            #防止部分玩家ID过大导致其以期望外的方式生成
+            u = data1['user']['userGamedata']['name'].encode("utf-8")
+            if len(u) < 18:
+                draw.text((281,130),data1['user']['userGamedata']['name'],'#FFFFFF',font=name_font)
+            else:
+                name_font = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=48)
+                draw.text((281,162),data1['user']['userGamedata']['name'],'#FFFFFF',font=name_font)
 
-            draw.text((281,135),data1['user']['userGamedata']['name'],'#FFFFFF',font=name_font)
             draw.text((404,231),str(data1['user']['userGamedata']['rank']),'#FFFFFF',font=rank_font)
 
 
@@ -373,8 +381,15 @@ async def gen_pjsk_jindu_image(bot,ev:CQEvent):
             font1 = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=50)
             font2 = ImageFont.truetype(load_path+f'\\CAT.TTF',size=36)
             draw = ImageDraw.Draw(image1)
-
-            draw.text((222,75),data1['user']['userGamedata']['name'], "#000000",font=font1)
+            
+            #防止部分玩家ID过大导致其以期望外的方式生成
+            u = data1['user']['userGamedata']['name'].encode("utf-8")
+            if len(u) < 18:
+                draw.text((214,75),data1['user']['userGamedata']['name'],'#000000',font=font1)
+            else:
+                font1 = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=30)
+                draw.text((214,95),data1['user']['userGamedata']['name'],'#000000',font=font1)
+                
             draw.text((315,135),str(data1['user']['userGamedata']['rank']), "#FFFFFF",font=font2)
             icon = icon.resize((117,117),Image.Resampling.LANCZOS)
             image1.paste(icon, (67,57))
