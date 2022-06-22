@@ -170,7 +170,7 @@ async def pj_profileGet(bot,ev:CQEvent):
             draw = ImageDraw.Draw(profile_image)
             draw_icon = ImageDraw.Draw(picon)
 
-            draw.text((281,145),data1['user']['userGamedata']['name'],'#FFFFFF',font=name_font)
+            draw.text((281,135),data1['user']['userGamedata']['name'],'#FFFFFF',font=name_font)
             draw.text((404,231),str(data1['user']['userGamedata']['rank']),'#FFFFFF',font=rank_font)
 
 
