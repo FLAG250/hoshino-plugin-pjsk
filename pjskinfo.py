@@ -164,9 +164,9 @@ async def pj_profileGet(bot,ev:CQEvent):
             new_pimage = 'C:\\Users\\Administrator\\Desktop\\haru-bot-setup\\hoshino\\modules\\pjsk\\pjprofile.png'
             picon = Image.open(BytesIO((await get_usericon(f'{uid}')).content)) #####
             num_font = ImageFont.truetype(load_path+f'\\CAT.TTF',size=40)
-            name_font = ImageFont.truetype(load_path+f'\\UDDIGIKYOKASHON-B.TTC',size=80)
+            name_font = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=80)
             rank_font = ImageFont.truetype(load_path+f'\\CAT.TTF',size=36)
-            word_font = ImageFont.truetype(load_path+f'\\UDDIGIKYOKASHON-B.TTC',size=32)
+            word_font = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=32)
             draw = ImageDraw.Draw(profile_image)
             draw_icon = ImageDraw.Draw(picon)
 
@@ -370,7 +370,7 @@ async def gen_pjsk_jindu_image(bot,ev:CQEvent):
 
             icon = Image.open(BytesIO((await get_usericon(f'{uid}')).content))
             font = ImageFont.truetype(load_path+f'\\CAT.TTF',size=40)
-            font1 = ImageFont.truetype(load_path+f'\\UDDIGIKYOKASHON-B.TTC',size=50)
+            font1 = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=50)
             font2 = ImageFont.truetype(load_path+f'\\CAT.TTF',size=36)
             draw = ImageDraw.Draw(image1)
 
