@@ -15,6 +15,8 @@ python初学者 第一次写hoshino的插件<br>
 3.在pjskinfo.py中修改load_path的路径（指向你放本插件的目录）<br>
 例load_path = "C:\\Users\\Administrater\\Desktop\\haru-bot-setup\\hoshino\\modules\\hoshino-pjsk-plugin"<br>
 4.重启并运行hoshino<br>
+运行前最好在account.json里先加上你自己的qqID和pjsk信息<br>
+（因为没试过空文件测试 不知道会有什么问题）<br>
 
 ## 未来功能<br>
 谱面查询<br>
