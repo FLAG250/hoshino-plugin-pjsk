@@ -161,8 +161,8 @@ async def pj_profileGet(bot,ev:CQEvent):
 
 
             
-            profile_image= Image.open('C:\\Users\\Administrator\\Desktop\\haru-bot-setup\\hoshino\\modules\\pjsk\\test1.png')
-            new_pimage = 'C:\\Users\\Administrator\\Desktop\\haru-bot-setup\\hoshino\\modules\\pjsk\\pjprofile.png'
+            profile_image= Image.open(load_path+f'\\test1.png')
+            new_pimage = load_path+f'\\pjprofile.png'
             picon = Image.open(BytesIO((await get_usericon(f'{uid}')).content)) #####
             num_font = ImageFont.truetype(load_path+f'\\CAT.TTF',size=40)
             name_font = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=80)
