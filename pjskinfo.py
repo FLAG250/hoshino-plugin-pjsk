@@ -49,34 +49,36 @@ def a_check(uid,account): #bot, ev: CQEvent
 @sv.on_prefix("/pjsk绑定")
 async def reg(bot, ev: CQEvent):
     ppid = ev.message.extract_plain_text().strip()
-    pid = int(ppid)
-    uid = ev.user_id
-    if isinstance(pid,int) and pid > 1000000000000000:       #待优化
-        with open(load_path+f"\\account.json","r") as f:
-            account = json.load(f)
-        n_a = len(account)
+    try:
+        pid = int(ppid)
+        uid = ev.user_id
+        if isinstance(pid,int) and pid > 1000000000000000:       #待优化
+            with open(load_path+f"\\account.json","r") as f:
+                account = json.load(f)
+            n_a = len(account)
 
-        if a_check(uid,account):
-            indexdata = []
-            for a in range(n_a):
-                uuid = account[a]["qqid"]
-                ppid = account[a]["pjskid"]
-                account_dict = {'qqid' : uuid,
-                                'pjskid' : ppid}
+            if a_check(uid,account):
+                indexdata = []
+                for a in range(n_a):
+                    uuid = account[a]["qqid"]
+                    ppid = account[a]["pjskid"]
+                    account_dict = {'qqid' : uuid,
+                                    'pjskid' : ppid}
+                    indexdata.append(account_dict)
+                account_dict = {'qqid' : uid,
+                                'pjskid' : int(pid)}
                 indexdata.append(account_dict)
-            account_dict = {'qqid' : uid,
-                            'pjskid' : int(pid)}
-            indexdata.append(account_dict)
 
-            with open (load_path+f'\\account.json', 'w', encoding='utf8') as f:
-                json.dump(indexdata, f,indent =2, ensure_ascii=False)
+                with open (load_path+f'\\account.json', 'w', encoding='utf8') as f:
+                    json.dump(indexdata, f,indent =2, ensure_ascii=False)
 
-            await bot.send(ev,f"绑定完成！",at_sender = True)
+                await bot.send(ev,f"绑定完成！",at_sender = True)
+            else:
+                await bot.send(ev,f"你已经绑定过！",at_sender = True)
         else:
-            await bot.send(ev,f"你已经绑定过！",at_sender = True)
-    else:
+            await bot.send(ev,f"UID格式错误",at_sender = True)
+    expert:
         await bot.send(ev,f"UID格式错误",at_sender = True)
-                
 
 
 
