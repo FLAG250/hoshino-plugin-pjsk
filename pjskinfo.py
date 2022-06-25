@@ -77,7 +77,7 @@ async def reg(bot, ev: CQEvent):
                 await bot.send(ev,f"你已经绑定过！",at_sender = True)
         else:
             await bot.send(ev,f"UID格式错误",at_sender = True)
-    expert:
+    except:
         await bot.send(ev,f"UID格式错误",at_sender = True)
 
 
@@ -100,6 +100,24 @@ async def lg(user_id):
             return  0
 
 
+
+
+async def getLeaderIcon(data1):
+    leaderId = data1['userDecks'][0]["leader"]
+    for  level in data1["userCards"]:
+        if leaderId == level["cardId"]:
+            card_type = level["defaultImage"]
+            break
+    getCd = req.get('https://database.pjsekai.moe/cards.json')
+    cards_infomation = json.loads(getCd.text)
+    for sc in cards_infomation:
+        if leaderId == sc["id"]:
+            if card_type == 'original':
+                url = f'https://asset.pjsekai.moe/startapp/thumbnail/chara/{sc["assetbundleName"]}_nomal.png'
+            elif card_type == "special_training":
+                url = f'https://asset.pjsekai.moe/startapp/thumbnail/chara/{sc["assetbundleName"]}_after_training.png'
+            l_icon = req.get(url)
+            return l_icon
 
     
 
@@ -130,12 +148,29 @@ async def countClear(_list,difficulty,data1):
 
 @sv.on_prefix("/pjskpf")
 async def pj_profileGet(bot,ev:CQEvent):
+    #逮捕
     uid = ev.user_id
+    userID = await lg(uid)
+
+    selection = 0
+    
     for i in ev.message:
         if i.type == 'at':
             uid = int(i.data['qq'])
+            userID = await lg(uid)
+            break   
 
-    userID = await lg(uid)
+    _uID = ev.message.extract_plain_text().strip()
+    if _uID != "":
+        _userID = int(_uID)
+        if isinstance(_userID,int) and _userID > 1000000000000000:
+            userID = _userID
+            selection = 1
+        else:
+            return await bot.send(ev,f'UID格式错误')
+
+     
+    
     if userID == 0:
         await bot.send(ev,f"没有绑定捏\n输入“/pjsk绑定+pjskID”来绑定吧~")
     else:
@@ -165,7 +200,12 @@ async def pj_profileGet(bot,ev:CQEvent):
             
             profile_image= Image.open(load_path+f'\\test1.png')
             new_pimage = load_path+f'\\pjprofile.png'
-            picon = Image.open(BytesIO((await get_usericon(f'{uid}')).content)) #####
+
+            if selection == 0:
+                picon = Image.open(BytesIO((await get_usericon(f'{uid}')).content)) #####
+            else:
+                picon = Image.open(BytesIO((await getLeaderIcon(data1)).content))
+            
             num_font = ImageFont.truetype(load_path+f'\\CAT.TTF',size=40)
             name_font = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=80)
             rank_font = ImageFont.truetype(load_path+f'\\CAT.TTF',size=36)
@@ -206,7 +246,9 @@ async def pj_profileGet(bot,ev:CQEvent):
             #个人简介
             
             word_text = Image.new('RGB', (654, 157), "#5b5b5b")
+            
             draw1 = ImageDraw.Draw(word_text)
+            
 
             msg = data1['userProfile']['word']
             positions = await measure(msg,32,700)
@@ -252,7 +294,7 @@ async def pj_profileGet(bot,ev:CQEvent):
             profile_image.save(new_pimage,"png")
             await bot.send(ev,MessageSegment.image(f'file:///{new_pimage}'),at_sender = True)
         except:
-            await bot.send(ev,f"api或服务器可能寄了 或者出现了意料之外的问题 \n请及时联系管理员看看发生什么事了")
+            await bot.send(ev,f"api或服务器可能寄了 或者你这个小可爱填错别人ID 不然一般是不会出现意料之外的问题的！ \n请及时联系管理员看看发生什么事了")
 
 @sv.on_prefix("/sk")
 async def event_rank(bot,ev:CQEvent):    
@@ -359,12 +401,29 @@ async def get_usericon(user):
 
 @sv.on_prefix("/pjsk进度")
 async def gen_pjsk_jindu_image(bot,ev:CQEvent):
+    #逮捕
     uid = ev.user_id
+    userID = await lg(uid)
+
+    selection = 0
+    
     for i in ev.message:
         if i.type == 'at':
             uid = int(i.data['qq'])
+            userID = await lg(uid)
+            break
 
-    userID = await lg(uid)
+    _uID = ev.message.extract_plain_text().strip()
+    if _uID != "":
+        _userID = int(_uID)
+        if isinstance(_userID,int) and _userID > 1000000000000000:
+            userID = _userID
+            selection = 1
+        else:
+            return await bot.send(ev,f'UID格式错误')
+
+
+
     if userID == 0:
         await bot.send(ev,f"没有绑定捏\n输入“/pjsk绑定+pjskID”来绑定吧~")
 
@@ -378,20 +437,24 @@ async def gen_pjsk_jindu_image(bot,ev:CQEvent):
             image1 = Image.open(load_path+f'\\test.png')
             new_image =load_path+f'\\pjskjindu.png'
 
-            icon = Image.open(BytesIO((await get_usericon(f'{uid}')).content))
+
+            if selection == 0:
+                icon = Image.open(BytesIO((await get_usericon(f'{uid}')).content)) #####
+            else:
+                icon = Image.open(BytesIO((await getLeaderIcon(data1)).content))
+
             font = ImageFont.truetype(load_path+f'\\CAT.TTF',size=40)
             font1 = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=50)
             font2 = ImageFont.truetype(load_path+f'\\CAT.TTF',size=36)
             draw = ImageDraw.Draw(image1)
-            
-            #防止部分玩家ID过大导致其以期望外的方式生成
+
             u = data1['user']['userGamedata']['name'].encode("utf-8")
             if len(u) < 18:
                 draw.text((214,75),data1['user']['userGamedata']['name'],'#000000',font=font1)
             else:
                 font1 = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=30)
                 draw.text((214,95),data1['user']['userGamedata']['name'],'#000000',font=font1)
-                
+
             draw.text((315,135),str(data1['user']['userGamedata']['rank']), "#FFFFFF",font=font2)
             icon = icon.resize((117,117),Image.Resampling.LANCZOS)
             image1.paste(icon, (67,57))
@@ -422,7 +485,7 @@ async def gen_pjsk_jindu_image(bot,ev:CQEvent):
 
             await bot.send(ev,MessageSegment.image(f'file:///{new_image}'),at_sender = True)
         except:
-            await bot.send(ev,f"api或服务器可能寄了 或者出现了意料之外的问题 \n请及时联系管理员看看发生什么事了")
+            await bot.send(ev,f"api或服务器可能寄了 或者你这个小可爱填错别人ID 不然一般是不会出现意料之外的问题的！ \n请及时联系管理员看看发生什么事了")
 
 
 '''
