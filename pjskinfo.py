@@ -113,7 +113,7 @@ async def getLeaderIcon(data1):
     for sc in cards_infomation:
         if leaderId == sc["id"]:
             if card_type == 'original':
-                url = f'https://asset.pjsekai.moe/startapp/thumbnail/chara/{sc["assetbundleName"]}_nomal.png'
+                url = f'https://asset.pjsekai.moe/startapp/thumbnail/chara/{sc["assetbundleName"]}_normal.png'
             elif card_type == "special_training":
                 url = f'https://asset.pjsekai.moe/startapp/thumbnail/chara/{sc["assetbundleName"]}_after_training.png'
             l_icon = req.get(url)
