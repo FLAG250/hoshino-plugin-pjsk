@@ -1,4 +1,4 @@
-import json
+import json, base64, time
 import requests as req
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
@@ -22,28 +22,25 @@ sv = Service(
     
 
 headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'}
-
-getmD = req.get('https://musics.pjsekai.moe/musicDifficulties.json')
-_lv = json.loads(getmD.text)
-getmc = req.get('https://musics.pjsekai.moe/musics.json')
-allMusic = json.loads(getmc.text)
-e_data = req.get('https://database.pjsekai.moe/events.json')
-_data = json.loads(e_data.text)
+url_getmD = 'https://musics.pjsekai.moe/musicDifficulties.json'
+url_getmc = 'https://musics.pjsekai.moe/musics.json'
+url_e_data = 'https://database.pjsekai.moe/events.json'
 color={"ap":"#d89aef","fc":"#ef8cee","clr":"#f0d873","all":"#6be1d9"}
-load_path = "C:\\Users\\Administrator\\Desktop\\haru-bot-setup\\hoshino\\modules\\pjsk"     #请按个人插件存放位置更改绝对路径
+load_path = os.path.dirname(__file__)     #更改为自动获取
 
-
+def data_req(url):  #现场请求相关数据，耗时较长，但是数据永远是最新的
+    temp_res = req.get(url, headers = headers)
+    re = json.loads(temp_res.text)
+    return re
 
 def a_check(uid,account): #bot, ev: CQEvent
     n_a = len(account)
-    B=0
     for a in range(n_a):
         if uid != account[a]["qqid"]:
-            B = B + 1
             continue
         else:
             return False
-    if B != 0:
+    else:
         return True
 
 @sv.on_prefix("/pjsk绑定")
@@ -52,6 +49,7 @@ async def reg(bot, ev: CQEvent):
     try:
         pid = int(ppid)
         uid = ev.user_id
+        print(pid)
         if isinstance(pid,int) and pid > 1000000000000000:       #待优化
             with open(load_path+f"\\account.json","r") as f:
                 account = json.load(f)
@@ -69,16 +67,16 @@ async def reg(bot, ev: CQEvent):
                                 'pjskid' : int(pid)}
                 indexdata.append(account_dict)
 
-                with open (load_path+f'\\account.json', 'w', encoding='utf8') as f:
+                with open (load_path+'\\account.json', 'w', encoding='utf8') as f:
                     json.dump(indexdata, f,indent =2, ensure_ascii=False)
-
+                
                 await bot.send(ev,f"绑定完成！",at_sender = True)
             else:
                 await bot.send(ev,f"你已经绑定过！",at_sender = True)
         else:
             await bot.send(ev,f"UID格式错误",at_sender = True)
     except:
-        await bot.send(ev,f"UID格式错误",at_sender = True)
+        await bot.send(ev,f"绑定发生错误",at_sender = True)
 
 
 
@@ -178,7 +176,7 @@ async def pj_profileGet(bot,ev:CQEvent):
             url = f'https://api.pjsekai.moe/api/user/{userID}/profile'
             getdata = req.get(url)
             data1 = json.loads(getdata.text)
-            print(uid)
+
 
             dict_backup=[]
             difficulty = ['easy','normal','hard','expert','master']
@@ -198,18 +196,18 @@ async def pj_profileGet(bot,ev:CQEvent):
 
 
             
-            profile_image= Image.open(load_path+f'\\test1.png')
-            new_pimage = load_path+f'\\pjprofile.png'
+            profile_image= Image.open(load_path+'\\test1.png')
+            new_pimage = load_path+'\\pjprofile.png'
 
             if selection == 0:
                 picon = Image.open(BytesIO((await get_usericon(f'{uid}')).content)) #####
             else:
                 picon = Image.open(BytesIO((await getLeaderIcon(data1)).content))
             
-            num_font = ImageFont.truetype(load_path+f'\\CAT.TTF',size=40)
-            name_font = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=80)
-            rank_font = ImageFont.truetype(load_path+f'\\CAT.TTF',size=36)
-            word_font = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=32)
+            num_font = ImageFont.truetype(load_path+'\\CAT.TTF',size=40)
+            name_font = ImageFont.truetype(load_path+'\\zzaw.ttf',size=80)
+            rank_font = ImageFont.truetype(load_path+'\\CAT.TTF',size=36)
+            word_font = ImageFont.truetype(load_path+'\\zzaw.ttf',size=32)
             draw = ImageDraw.Draw(profile_image)
             draw_icon = ImageDraw.Draw(picon)
             
@@ -218,7 +216,7 @@ async def pj_profileGet(bot,ev:CQEvent):
             if len(u) < 18:
                 draw.text((281,130),data1['user']['userGamedata']['name'],'#FFFFFF',font=name_font)
             else:
-                name_font = ImageFont.truetype(load_path+f'\\zzaw.ttf',size=48)
+                name_font = ImageFont.truetype(load_path+'\\zzaw.ttf',size=48)
                 draw.text((281,162),data1['user']['userGamedata']['name'],'#FFFFFF',font=name_font)
 
             draw.text((404,231),str(data1['user']['userGamedata']['rank']),'#FFFFFF',font=rank_font)
@@ -291,8 +289,10 @@ async def pj_profileGet(bot,ev:CQEvent):
             characterdataGet()
             picon = picon.resize((177,177),Image.Resampling.LANCZOS)
             profile_image.paste(picon, (95,106))
-            profile_image.save(new_pimage,"png")
-            await bot.send(ev,MessageSegment.image(f'file:///{new_pimage}'),at_sender = True)
+            buf = BytesIO()
+            profile_image.save(buf, format='PNG')
+            base64_str = f'base64://{base64.b64encode(buf.getvalue()).decode()}' #通过BytesIO发送图片，无需生成本地文件
+            await bot.send(ev,f'[CQ:image,file={base64_str}]',at_sender = True)
         except:
             await bot.send(ev,f"api或服务器可能寄了 或者你这个小可爱填错别人ID 不然一般是不会出现意料之外的问题的！ \n请及时联系管理员看看发生什么事了")
 
@@ -304,16 +304,21 @@ async def event_rank(bot,ev:CQEvent):
         await bot.send(ev,f"没有绑定捏\n输入“/pjsk绑定+pjskID”来绑定吧~")
     else:
         try:
+            _data = data_req(url_e_data)
             event_id = _data[-1]['id']
             event_name = _data[-1]['name']
             e_type = _data[-1]['eventType']
+            event_end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(_data[-1]["aggregateAt"]/1000))) 
             url1 = f'https://api.pjsekai.moe/api/user/%7Buser_id%7D/event/{event_id}/ranking?targetUserId=+{userid}'
 
             user_event_data = req.get(url1, headers=headers)
             _event_data = json.loads(user_event_data.text)
-            user_event_rank = _event_data['rankings'][0]['rank']
-            user_event_score = _event_data['rankings'][0]['score']
-
+            try:
+                user_event_rank = _event_data['rankings'][0]['rank']  #你的try嵌套错地方了，如果没打活动这里就取不到值了
+                user_event_score = _event_data['rankings'][0]['score']  #所以生成消息那边嵌套的try实际没有用
+            except:
+                await bot.send(ev, '小可爱你还没打活动查什么呢', at_sender = True) 
+                return  #利用return结束
             nearest_line = 0
             event_line = [100, 200, 500,
                         1000, 2000, 5000,
@@ -331,17 +336,67 @@ async def event_rank(bot,ev:CQEvent):
             url2 = f'https://api.pjsekai.moe/api/user/%7Buser_id%7D/event/{event_id}/ranking?targetRank={nearest_line}'
             event_line_data = req.get(url2, headers=headers)
             _event_line_data = json.loads(event_line_data.text)
-            await bot.send(ev,f"当前活动:{event_name}\n活动类型:{e_type}\n你的分数:{str(user_event_score)} rank#{str(user_event_rank)}\n最近的分数线:{str(_event_line_data['rankings'][0]['score'])} rank#{nearest_line}",at_sender = True)
-            
+            msg = f"当前活动:{event_name}\n活动类型:{e_type}\n活动截止时间:{event_end_time}\n你的分数:{str(user_event_score)} rank#{str(user_event_rank)}\n最近的分数线:{str(_event_line_data['rankings'][0]['score'])} rank#{nearest_line}"
+
             if a == 14:
                 try:
-                    await bot.send(ev,f"当前活动:{event_name}\n活动类型:{e_type}\n你的分数:{str(user_event_score)} rank#{str(user_event_rank)}\n最近的分数线:{str(_event_line_data['rankings'][0]['score'])} rank#{nearest_line}",at_sender = True)
+                   msg = f"当前活动:{event_name}\n活动类型:{e_type}\n活动截止时间:{event_end_time}\n你的分数:{str(user_event_score)} rank#{str(user_event_rank)}\n最近的分数线:{str(_event_line_data['rankings'][0]['score'])} rank#{nearest_line}"
                 except:
-                    await bot.send(ev,f"没有查到数据！")
-        except:
-            await bot.send(ev,f"api或服务器可能寄了 或者出现了意料之外的问题 \n请及时联系管理员看看发生什么事了")
-
-
+                    msg = "没有查到数据！"
+        except Exception as e:
+            msg = f"发生错误，错误类型：{type(e)}\n请联系管理员"
+            print(e)
+        await bot.send(ev, msg, at_sender = True)    
+    
+@sv.on_prefix('/pjsk档线')
+async def event_line_score(bot, ev):
+    try:
+        req_line = int(ev.message.extract_plain_text().strip())
+    except:
+        req_line = 0
+    try:
+        _data = data_req(url_e_data)
+        event_id = _data[-1]['id']
+        event_name = _data[-1]['name']
+        e_type = _data[-1]['eventType']
+        
+        #line_score = []
+        if req_line ==0:
+            event_line = [100, 200, 500,
+                    1000, 2000, 5000,
+                    10000, 20000, 50000,
+                    100000, 200000, 500000, 1000000]
+            event_line_msg = ['100', '200', '500',
+                    '1k', '2k', '5k',
+                    '1w', '2w', '5w',
+                    '10w', '20w', '50w', '100w']
+            index = 0
+            msg = f'活动标题：{event_name}\n活动类型:{e_type}'
+            for line in event_line:
+                url2 = f'https://api.pjsekai.moe/api/user/%7Buser_id%7D/event/{event_id}/ranking?targetRank={line}'
+                event_line_data = data_req(url2)
+                try:
+                    #line_score.append(str(event_line_data['rankings'][0]['score']))  #预留后期图像化
+                    line_score = event_line_data['rankings'][0]['score']
+                    msg += f'\n{event_line_msg[index]}线:{line_score}'
+                except:
+                    #line_score.append('暂无数据')
+                    msg += f'\n{event_line_msg[index]}线:暂无数据'
+                index += 1
+        else:
+            msg = f'活动标题：{event_name}\n活动类型:{e_type}'
+            url2 = f'https://api.pjsekai.moe/api/user/%7Buser_id%7D/event/{event_id}/ranking?targetRank={req_line}'
+            event_line_data = data_req(url2)
+            try:
+                line_score = event_line_data['rankings'][0]['score']
+                msg += f'\n{req_line}线:{line_score}'
+            except:
+                msg += f'\n{req_line}线:暂无数据'
+    except Exception as e:
+        print(e)
+        msg = f"发生错误，错误类型：{type(e)}\n请联系管理员"
+        
+    await bot.send(ev, msg, at_sender = True)  
 
 async def pj_musicCompletedDataGet(uid,data1):
     difficulty = 'master'
@@ -357,7 +412,8 @@ async def pj_musicCompletedDataGet(uid,data1):
     list2,p_count = await countFlg(list2,'fullPerfectFlg',difficulty,data1)
     list4,count = await countClear(list4,difficulty,data1)
 
-
+    _lv = data_req(url_getmD)
+    allMusic = data_req(url_getmc)
     #按难度分类  
     for _ in allMusic:
             list3.append(_['id'])
@@ -481,9 +537,10 @@ async def gen_pjsk_jindu_image(bot,ev:CQEvent):
                 else:
                     draw.text((892,284+(97*(int(i)-32))),str(_all[0][i]), color["all"],font=font)
             
-            image1.save(new_image,"png")
-
-            await bot.send(ev,MessageSegment.image(f'file:///{new_image}'),at_sender = True)
+            buf = BytesIO()
+            image1.save(buf, format='PNG')
+            base64_str = f'base64://{base64.b64encode(buf.getvalue()).decode()}'
+            await bot.send(ev,f'[CQ:image,file={base64_str}]',at_sender = True)
         except:
             await bot.send(ev,f"api或服务器可能寄了 或者你这个小可爱填错别人ID 不然一般是不会出现意料之外的问题的！ \n请及时联系管理员看看发生什么事了")
 
