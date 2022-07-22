@@ -1,4 +1,4 @@
-import json, base64
+import json, base64, time
 import requests as req
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
@@ -304,11 +304,11 @@ async def event_rank(bot,ev:CQEvent):
         await bot.send(ev,f"没有绑定捏\n输入“/pjsk绑定+pjskID”来绑定吧~")
     else:
         try:
-        #if 1:
             _data = data_req(url_e_data)
             event_id = _data[-1]['id']
             event_name = _data[-1]['name']
             e_type = _data[-1]['eventType']
+            event_end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(_data[-1]["aggregateAt"]/1000))) 
             url1 = f'https://api.pjsekai.moe/api/user/%7Buser_id%7D/event/{event_id}/ranking?targetUserId=+{userid}'
 
             user_event_data = req.get(url1, headers=headers)
@@ -336,11 +336,11 @@ async def event_rank(bot,ev:CQEvent):
             url2 = f'https://api.pjsekai.moe/api/user/%7Buser_id%7D/event/{event_id}/ranking?targetRank={nearest_line}'
             event_line_data = req.get(url2, headers=headers)
             _event_line_data = json.loads(event_line_data.text)
-            msg = f"当前活动:{event_name}\n活动类型:{e_type}\n你的分数:{str(user_event_score)} rank#{str(user_event_rank)}\n最近的分数线:{str(_event_line_data['rankings'][0]['score'])} rank#{nearest_line}"
+            msg = f"当前活动:{event_name}\n活动类型:{e_type}\n活动截止时间:{event_end_time}\n你的分数:{str(user_event_score)} rank#{str(user_event_rank)}\n最近的分数线:{str(_event_line_data['rankings'][0]['score'])} rank#{nearest_line}"
 
             if a == 14:
                 try:
-                   msg = f"当前活动:{event_name}\n活动类型:{e_type}\n你的分数:{str(user_event_score)} rank#{str(user_event_rank)}\n最近的分数线:{str(_event_line_data['rankings'][0]['score'])} rank#{nearest_line}"
+                   msg = f"当前活动:{event_name}\n活动类型:{e_type}\n活动截止时间:{event_end_time}\n你的分数:{str(user_event_score)} rank#{str(user_event_rank)}\n最近的分数线:{str(_event_line_data['rankings'][0]['score'])} rank#{nearest_line}"
                 except:
                     msg = "没有查到数据！"
         except Exception as e:
@@ -374,11 +374,10 @@ async def event_line_score(bot, ev):
             msg = f'活动标题：{event_name}\n活动类型:{e_type}'
             for line in event_line:
                 url2 = f'https://api.pjsekai.moe/api/user/%7Buser_id%7D/event/{event_id}/ranking?targetRank={line}'
-                event_line_data = req.get(url2, headers=headers)
-                _event_line_data = json.loads(event_line_data.text)
+                event_line_data = data_req(url2)
                 try:
-                    #line_score.append(str(_event_line_data['rankings'][0]['score']))  #预留后期图像化
-                    line_score = _event_line_data['rankings'][0]['score']
+                    #line_score.append(str(event_line_data['rankings'][0]['score']))  #预留后期图像化
+                    line_score = event_line_data['rankings'][0]['score']
                     msg += f'\n{event_line_msg[index]}线:{line_score}'
                 except:
                     #line_score.append('暂无数据')
@@ -387,10 +386,9 @@ async def event_line_score(bot, ev):
         else:
             msg = f'活动标题：{event_name}\n活动类型:{e_type}'
             url2 = f'https://api.pjsekai.moe/api/user/%7Buser_id%7D/event/{event_id}/ranking?targetRank={req_line}'
-            event_line_data = req.get(url2, headers=headers)
-            _event_line_data = json.loads(event_line_data.text)
+            event_line_data = data_req(url2)
             try:
-                line_score = _event_line_data['rankings'][0]['score']
+                line_score = event_line_data['rankings'][0]['score']
                 msg += f'\n{req_line}线:{line_score}'
             except:
                 msg += f'\n{req_line}线:暂无数据'
@@ -398,8 +396,7 @@ async def event_line_score(bot, ev):
         print(e)
         msg = f"发生错误，错误类型：{type(e)}\n请联系管理员"
         
-    await bot.send(ev, msg, at_sender = True)   
-
+    await bot.send(ev, msg, at_sender = True)  
 
 async def pj_musicCompletedDataGet(uid,data1):
     difficulty = 'master'
