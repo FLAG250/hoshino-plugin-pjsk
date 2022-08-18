@@ -296,6 +296,13 @@ async def pj_profileGet(bot,ev:CQEvent):
         except:
             await bot.send(ev,f"api或服务器可能寄了 或者你这个小可爱填错别人ID 不然一般是不会出现意料之外的问题的！ \n请及时联系管理员看看发生什么事了")
 
+def load_event_info(_data):
+    i = -2
+    close_time = int(_data[i]["closedAt"]/1000) 
+    if time.time() > close_time: #说明倒数第二个活动已关闭，按最新的算
+        i = -1
+    return _data[i]['id'], _data[i]['name'], time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(_data[i]["aggregateAt"]/1000))),  _data[i]['eventType']
+            
 @sv.on_prefix("/sk")
 async def event_rank(bot,ev:CQEvent):    
     uid = ev.user_id
@@ -305,11 +312,8 @@ async def event_rank(bot,ev:CQEvent):
     else:
         try:
             _data = data_req(url_e_data)
-            event_id = _data[-1]['id']
-            event_name = _data[-1]['name']
-            e_type = _data[-1]['eventType']
-            event_end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(_data[-1]["aggregateAt"]/1000))) 
-            url1 = f'https://api.pjsekai.moe/api/user/%7Buser_id%7D/event/{event_id}/ranking?targetUserId=+{userid}'
+            event_id, event_name, event_end_time, e_type = load_event_info(_data)
+            url1 = f'https://api.pjsekai.moe/api/user/%7Buser_id%7D/event/{event_id}/ranking?targetUserId={userid}'
 
             user_event_data = req.get(url1, headers=headers)
             _event_data = json.loads(user_event_data.text)
@@ -319,7 +323,7 @@ async def event_rank(bot,ev:CQEvent):
             except:
                 await bot.send(ev, '小可爱你还没打活动查什么呢', at_sender = True) 
                 return  #利用return结束
-            nearest_line = 0
+            nearest_line = []
             event_line = [100, 200, 500,
                         1000, 2000, 5000,
                         10000, 20000, 50000,
@@ -328,37 +332,40 @@ async def event_rank(bot,ev:CQEvent):
 
             for a in range(len(event_line)):
                 if int(event_line[a]) >= user_event_rank:
-                    nearest_line = event_line[a-1]
+                    if a != 0:
+                        nearest_line.append(event_line[a-1])
+                    nearest_line.append(event_line[a])
                     break
-                elif int(event_line[14]) < user_event_rank:
-                    nearest_line = event_line[14]
+            else:
+                nearest_line.append(event_line[-1])
                                 
-            url2 = f'https://api.pjsekai.moe/api/user/%7Buser_id%7D/event/{event_id}/ranking?targetRank={nearest_line}'
-            event_line_data = req.get(url2, headers=headers)
-            _event_line_data = json.loads(event_line_data.text)
-            msg = f"当前活动:{event_name}\n活动类型:{e_type}\n活动截止时间:{event_end_time}\n你的分数:{str(user_event_score)} rank#{str(user_event_rank)}\n最近的分数线:{str(_event_line_data['rankings'][0]['score'])} rank#{nearest_line}"
-
-            if a == 14:
+            msg = f"当前活动:{event_name}\n活动类型:{e_type}\n活动截止时间:{event_end_time}\n你的分数:{str(user_event_score)} rank#{str(user_event_rank)}\n最近的分数线:"
+            for i in nearest_line:
                 try:
-                   msg = f"当前活动:{event_name}\n活动类型:{e_type}\n活动截止时间:{event_end_time}\n你的分数:{str(user_event_score)} rank#{str(user_event_rank)}\n最近的分数线:{str(_event_line_data['rankings'][0]['score'])} rank#{nearest_line}"
+                    url2 = f'https://api.pjsekai.moe/api/user/%7Buser_id%7D/event/{event_id}/ranking?targetRank={i}'
+                    event_line_data = req.get(url2, headers=headers)
+                    _event_line_data = json.loads(event_line_data.text)
+                    msg += f"\nrank#{i} {str(_event_line_data['rankings'][0]['score'])}"
                 except:
-                    msg = "没有查到数据！"
+                    msg += f"\nrank#{i} 最近的分数线:暂无数据"
+
         except Exception as e:
             msg = f"发生错误，错误类型：{type(e)}\n请联系管理员"
             print(e)
         await bot.send(ev, msg, at_sender = True)    
     
+def load_req_line(string:str):
+    return string.replace('k', '000').replace('K', '000').replace('w', '0000').replace('W', '0000')
+    
 @sv.on_prefix('/pjsk档线')
 async def event_line_score(bot, ev):
     try:
-        req_line = int(ev.message.extract_plain_text().strip())
+        req_line = load_req_line(ev.message.extract_plain_text().strip())
     except:
         req_line = 0
     try:
         _data = data_req(url_e_data)
-        event_id = _data[-1]['id']
-        event_name = _data[-1]['name']
-        e_type = _data[-1]['eventType']
+        event_id, event_name, event_end_time, e_type = load_event_info(_data)
         
         #line_score = []
         if req_line ==0:
