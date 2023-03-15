@@ -1,3 +1,6 @@
+# SBGA还我API！！<br>#
+鉴于unibot以开源 直接开摆（安静地躺平）<br>
+
 # hoshino-pjsk-plugin<br>
 因为频道里的pjsk查询没有开源 翻了翻pjsk信息网站发现有api于是决定自己做<br> 
 指令 `/pjsk绑定+pjskID`可以绑定发送者的qq与pjsk，<br>
