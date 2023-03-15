@@ -1,4 +1,4 @@
-# SBGA还我API！！<br>#
+# SBGA还我API！！<br>
 鉴于unibot以开源 直接开摆（安静地躺平）<br>
 
 # hoshino-pjsk-plugin<br>
